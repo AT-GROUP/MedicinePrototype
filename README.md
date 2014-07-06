@@ -25,7 +25,7 @@ Medicine IES prototype for vcmk
 
 Денис Бодунков - alzater
 
-Александер Минаков - Elshiko
+Александр Минаков - Elshiko
 
 Данякин Иван - DfyzzyX
 
