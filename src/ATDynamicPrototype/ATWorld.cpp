@@ -87,23 +87,22 @@ ATMap::~ATMap()
 {
 }
 
-double ATMap::latitudeToCoord(double latitude) const
-{
-	return -11100.0 * (latitude - m_zeroPoint.latitude);
+double ATMap::latitudeToCoord(double latitude, double longtitude) const
+{	
+	return 637800.137 * (latitude - m_zeroPoint.latitude)*sin(longtitude)*cos(latitude)*(150/(150+6378.137*sin(latitude)));
 }
 
 double ATMap::longtitudeToCoord(double longtitude, double latitude) const
 {
-	return -11100.0 * (longtitude - m_zeroPoint.longtitude)*cos(latitude);
+	return -637800.137 * (longtitude - m_zeroPoint.longtitude)*cos(longtitude)*cos(latitude)*(150/(150+6378.137*sin(latitude)));
+
 }
 
 QPointF ATMap::toSceneCoords(const MapCoord & map_coords) const
 {
-	return QPointF(longtitudeToCoord(map_coords.longtitude, map_coords.latitude), latitudeToCoord(map_coords.latitude));
+	return QPointF(longtitudeToCoord(map_coords.longtitude, map_coords.latitude), latitudeToCoord(map_coords.latitude, map_coords.longtitude));
 
 }
-
-
 
 //=======================Map node visualization=========================
 ATGraphicsMapNode::ATGraphicsMapNode(MapNode * p_node, const ATMap * p_map)
@@ -112,7 +111,7 @@ ATGraphicsMapNode::ATGraphicsMapNode(MapNode * p_node, const ATMap * p_map)
 	auto point = new QGraphicsEllipseItem(-1, -1, 2, 2, this);
 	addToGroup(point);
 
-	setPos(p_map->longtitudeToCoord(p_node->longtitude(), p_node->latitude()),p_map->latitudeToCoord(p_node->latitude()));
+	setPos(p_map->longtitudeToCoord(p_node->longtitude(), p_node->latitude()),p_map->latitudeToCoord(p_node->latitude(), p_node->longtitude()));
 }
 
 //======================Road visualization==============================
@@ -219,6 +218,40 @@ ATAmbulance::ATAmbulance(MapNode * pos)
     do_the_stuff(this_info);
 }
 
+bool ATAmbulance::move(MapRoad *path, MapCoord zeroPoint)
+{
+	int length = 0;
+	int start_x = path->m_nodes.at(0)->latitude();
+	int start_y = path->m_nodes.at(0)->longtitude();
+	int cur_x, cur_y, prev_x, prev_y;
+	prev_x = start_x;
+	prev_y = start_y;
+
+	for (auto node : path->m_nodes)
+	{
+		if (length < cur_velocity)
+		{
+			if (length == 0)
+				length = sqrt((node->latitude() - prev_x)*(node->latitude() - prev_x) + (node->longtitude() - prev_y)*(node->longtitude() - prev_y));   //рассчет расстояния между предъидущей и текущей точками
+			else
+				length += sqrt((node->latitude() - prev_x)*(node->latitude() - prev_x) + (node->longtitude() - prev_y)*(node->longtitude() - prev_y));  //рассчет расстояния между предъидущей и текущей точками
+
+			prev_x = node->latitude();
+			prev_y = node->longtitude();
+			this->set_pos(node);
+			setPos(637800.137 * (node->latitude() - zeroPoint.latitude)*sin(node->longtitude())*cos(node->latitude())*(150/(150+6378.137*sin(node->latitude()))), -637800.137 * (node->longtitude() - zeroPoint.longtitude)*cos(node->longtitude())*cos(node->latitude())*(150/(150+6378.137*sin(node->latitude()))));
+		}
+		else
+		{
+			MapNode *new_pos = new MapNode(NULL , (node->latitude() - prev_x)/length, (node->longtitude() - prev_y)/length);
+			this->set_pos(new_pos);
+			setPos(637800.137 * (new_pos->latitude() - zeroPoint.latitude)*sin(new_pos->longtitude())*cos(new_pos->latitude())*(150/(150+6378.137*sin(new_pos->latitude()))), -637800.137 * (new_pos->longtitude() - zeroPoint.longtitude)*cos(new_pos->longtitude())*cos(new_pos->latitude())*(150/(150+6378.137*sin(new_pos->latitude()))));
+			length = 0;
+		}
+	}
+	return true;
+}
+
 //====================== Hospitals ===============================
 ATHospital::ATHospital(MapNode * pos, int new_wards)
 	:wards(new_wards), all_amb(NULL), car_slots(9)
@@ -255,6 +288,13 @@ ATWorld::ATWorld(const std::string & map_file_name)
 	:ATMap(map_file_name), hospitals(NULL), active_accidents(NULL)
 {
 	loadMap();
+	
+	ATAmbulance *amb1 = new ATAmbulance(m_roads.at(10)->m_nodes.at(0));
+	//amb1->setPos(637800.137 * (m_roads.at(10)->m_nodes.at(0)->latitude() - m_zeroPoint.latitude)*sin(m_roads.at(10)->m_nodes.at(0)->longtitude())*cos(m_roads.at(10)->m_nodes.at(0)->latitude())*(150/(150+6378.137*sin(m_roads.at(10)->m_nodes.at(0)->latitude()))), -637800.137 * (m_roads.at(10)->m_nodes.at(0)->longtitude() - m_zeroPoint.longtitude)*cos(m_roads.at(10)->m_nodes.at(0)->longtitude())*cos(m_roads.at(10)->m_nodes.at(0)->latitude())*(150/(150+6378.137*sin(m_roads.at(10)->m_nodes.at(0)->latitude()))));
+	amb1->setPos(-5000, 10000);
+	addItem(amb1);
+	//amb1->move(m_roads.at(2), m_zeroPoint);
+	
 	/*
 	QPoint *pnt1 = new QPoint(100,60);
 	auto acc = new ATAccident(pnt1, 1);

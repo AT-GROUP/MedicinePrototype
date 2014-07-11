@@ -77,7 +77,7 @@ class ATMap
 public:
 	ATMap(const std::string & file_name);
 	~ATMap();
-	double latitudeToCoord(double latitude) const;
+	double latitudeToCoord(double latitude, double longtitude) const;
 	double longtitudeToCoord(double longtitude, double latitude ) const;
 	QPointF toSceneCoords(const MapCoord & map_coords) const;
 	
@@ -103,6 +103,7 @@ public:
 private:
 	MapRoad * m_pRoad;
 };
+
 class ATSceneItem : public QGraphicsPixmapItem
 {
 public:
@@ -119,6 +120,7 @@ public:
 	void do_the_stuff(QTableView * this_info);
 
 private:
+	QPoint *cur_pos_scene;
 	MapNode * cur_pos;
 
 protected:
@@ -159,6 +161,8 @@ public:
 
 	void process_acc()
 		{};                        //обработка дтп
+
+	bool move(MapRoad *path, MapCoord zeroPoint);
 
 	bool update()
 		{};                             //обновление положения бригады на карте
@@ -203,8 +207,8 @@ public:
 
 public slots:
 	void testUpdate();
+
 private:
-	QGraphicsEllipseItem * m_pBall;
 	std::vector <ATAccident *> active_accidents; //список активных дтп
  	std::vector <ATHospital *> hospitals;        //список больниц
 };
