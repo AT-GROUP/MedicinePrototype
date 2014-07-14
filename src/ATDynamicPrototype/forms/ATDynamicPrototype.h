@@ -13,6 +13,12 @@ public:
 	~ATDynamicPrototype();
 	void displayScene(QGraphicsScene * scnene);
 
+signals:
+	void move_btn_clicked();
+
+private slots:
+	void on_btn_clicked();
+
 private:
 	Ui::ATDynamicPrototypeClass ui;
 };

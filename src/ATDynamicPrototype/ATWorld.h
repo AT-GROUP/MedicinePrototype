@@ -169,7 +169,7 @@ public:
 
 private:
 	ATAccident * cur_acc;                        //текущее задание для бригады
-	int cur_velocity;                            //скорость машины
+	double cur_velocity;                            //скорость машины
 };
 
 class ATHospital : public ATSceneItem			 //больница TBD * отображение кол-ва свободных мест для пострадавших, кол-ва скорых (иконки(зеленые палки/уменьшенные иконки скорой) цветные(в гараже(свободны))/серые(на задании))
@@ -197,6 +197,9 @@ public:
 	ATWorld(const std::string & map_file_name);
 	
 	void loadMap();
+
+	std::vector <ATAmbulance *> all_amb;
+
 	void generate_acc()
 		{};
 

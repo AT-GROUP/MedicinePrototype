@@ -15,8 +15,6 @@ ATDynamicIESApp::ATDynamicIESApp(int argc, char *argv[])
 	connect(m_pTickTimer, &QTimer::timeout, m_pWorld, &ATWorld::testUpdate);
 	m_pTickTimer->start(50);
 
-
-
 }
 
 ATDynamicIESApp::~ATDynamicIESApp()
@@ -29,4 +27,9 @@ ATDynamicIESApp::~ATDynamicIESApp()
 ATWorld * ATDynamicIESApp::world()
 {
 	return m_pWorld;
+}
+
+void ATDynamicIESApp::move_car()
+{
+	m_pWorld->all_amb.at(0)->setPos(-5100, 10100);
 }

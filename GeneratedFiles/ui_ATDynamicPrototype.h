@@ -38,6 +38,7 @@ public:
     QVBoxLayout *verticalLayout;
     QPushButton *pushButton;
     QPushButton *pushButton_2;
+    QPushButton *btn;
     QSpacerItem *verticalSpacer;
     QMenuBar *menuBar;
     QToolBar *mainToolBar;
@@ -75,6 +76,11 @@ public:
 
         verticalLayout->addWidget(pushButton_2);
 
+        btn = new QPushButton(groupBox);
+        btn->setObjectName(QStringLiteral("btn"));
+
+        verticalLayout->addWidget(btn);
+
         verticalSpacer = new QSpacerItem(20, 40, QSizePolicy::Minimum, QSizePolicy::Expanding);
 
         verticalLayout->addItem(verticalSpacer);
@@ -105,6 +111,7 @@ public:
         groupBox->setTitle(QApplication::translate("ATDynamicPrototypeClass", "Actions", 0));
         pushButton->setText(QApplication::translate("ATDynamicPrototypeClass", "Generate accidents", 0));
         pushButton_2->setText(QApplication::translate("ATDynamicPrototypeClass", "Plan and Solve", 0));
+        btn->setText(QApplication::translate("ATDynamicPrototypeClass", "PushButton", 0));
     } // retranslateUi
 
 };

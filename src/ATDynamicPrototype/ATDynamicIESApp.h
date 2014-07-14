@@ -16,6 +16,9 @@ public:
 	~ATDynamicIESApp();
 	ATWorld * world();
 
+private slots:
+	void move_car();
+
 private:
 	QTimer * m_pTickTimer;
 	TempSolverWrapper * m_pTemporalSolver;

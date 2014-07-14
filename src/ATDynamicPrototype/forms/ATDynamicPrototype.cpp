@@ -17,3 +17,8 @@ void ATDynamicPrototype::displayScene(QGraphicsScene * scnene)
 {
 	ui.gvMain->setScene(scnene);  
 }
+
+void ATDynamicPrototype::on_btn_clicked()
+{
+	emit move_btn_clicked();
+}

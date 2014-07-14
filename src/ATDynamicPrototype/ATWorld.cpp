@@ -15,12 +15,26 @@
 #include <libxml/xmlwriter.h>
 #include <libxml/xmlsave.h>
 #include <exception>
+#include "math.h"
 
 //#include <osmreader.h>
 //#include <osmium.hpp>
 
 #define xml_for_each_child(root, iterator) for(xmlNode * iterator = root->children; iterator; iterator = iterator->next) if (iterator->type == XML_ELEMENT_NODE)
+#define sqr(c) ((c) * (c))
+#define long_lat_to_scene(longtitude, latitude, a, b) \
+	a = -637800.137 * (longtitude - 37.0847000)*cos(longtitude)*cos(latitude)*(150/(150+6378.137*sin(latitude))); \
+	b = 637800.137 * (latitude - 55.4770000)*sin(longtitude)*cos(latitude)*(150/(150+6378.137*sin(latitude)));
 
+#define calculate_length(longtitude1, latitude1, longtitude2, latitude2, length) \
+	double ln1 = longtitude1 * 3.1415/180; \
+	double lt1 = latitude1 * 3.1415/180;   \
+	double ln2 = longtitude2 * 3.1415/180; \
+	double lt2 = latitude2 * 3.1415/180;   \
+	double x =  sin(lt1) * sin(lt2) + cos(lt1) * cos(lt2) * cos(ln2-ln1);        \
+	double y =  sqrt(sqr(cos(lt2) * sin(ln2 - ln1)) + sqr(cos(lt1) * sin(lt2) - sin(lt1) * cos(lt2) * cos(ln2 - ln1))); \
+	double atn = atan(y/x); \
+	length = atn * 6372795;
 
 const char * xml_node_attr_data(xmlNode * node, const char * attr_name)
 {
@@ -207,7 +221,7 @@ bool ATAccident::set_inj()
 
 //====================== Ambulances ==============================
 ATAmbulance::ATAmbulance(MapNode * pos)
-	:cur_velocity(0), cur_acc(NULL)
+	:cur_velocity(100.0), cur_acc(NULL)
 {
 	set_pos(pos);
 
@@ -216,39 +230,54 @@ ATAmbulance::ATAmbulance(MapNode * pos)
 	this_info = new QTableView();
     this_info->setModel(new ATAmbulance_info_table_model());
     do_the_stuff(this_info);
+
 }
 
 bool ATAmbulance::move(MapRoad *path, MapCoord zeroPoint)
 {
-	int length = 0;
-	int start_x = path->m_nodes.at(0)->latitude();
-	int start_y = path->m_nodes.at(0)->longtitude();
-	int cur_x, cur_y, prev_x, prev_y;
-	prev_x = start_x;
-	prev_y = start_y;
+	double length = 0.0;                           // расстояние до следующей точки
 
-	for (auto node : path->m_nodes)
+	double cur_x = get_pos().longtitude();         // текущее
+	double cur_y = get_pos().latitude();           // положение
+	double cur_x_scene, cur_y_scene;
+	double node_x_scene, node_y_scene;
+
+	for (int i = 1; i < path->m_nodes.size(); ++i)
 	{
+		//long_lat_to_scene(cur_x, cur_y, cur_x_scene, cur_y_scene);
+		//long_lat_to_scene(path->m_nodes.at(i)->longtitude(), path->m_nodes.at(i)->latitude(), node_x_scene, node_y_scene);
+		calculate_length(cur_x, cur_y, path->m_nodes.at(i)->longtitude(), path->m_nodes.at(i)->latitude(), length);
+		//length += sqrt(sqr(node_x_scene - cur_x_scene) + sqr(node_y_scene - cur_y_scene));
+
 		if (length < cur_velocity)
 		{
-			if (length == 0)
-				length = sqrt((node->latitude() - prev_x)*(node->latitude() - prev_x) + (node->longtitude() - prev_y)*(node->longtitude() - prev_y));   //рассчет расстояния между предъидущей и текущей точками
-			else
-				length += sqrt((node->latitude() - prev_x)*(node->latitude() - prev_x) + (node->longtitude() - prev_y)*(node->longtitude() - prev_y));  //рассчет расстояния между предъидущей и текущей точками
-
-			prev_x = node->latitude();
-			prev_y = node->longtitude();
-			this->set_pos(node);
-			setPos(637800.137 * (node->latitude() - zeroPoint.latitude)*sin(node->longtitude())*cos(node->latitude())*(150/(150+6378.137*sin(node->latitude()))), -637800.137 * (node->longtitude() - zeroPoint.longtitude)*cos(node->longtitude())*cos(node->latitude())*(150/(150+6378.137*sin(node->latitude()))));
+			cur_x = path->m_nodes.at(i)->longtitude();
+			cur_y = path->m_nodes.at(i)->latitude();
+			long_lat_to_scene(cur_x, cur_y, cur_x_scene, cur_y_scene);
+			this->setPos(cur_x_scene - 30, cur_y_scene - 22);
+			length = 0.0;
 		}
-		else
+
+		if (length == cur_velocity)
 		{
-			MapNode *new_pos = new MapNode(NULL , (node->latitude() - prev_x)/length, (node->longtitude() - prev_y)/length);
-			this->set_pos(new_pos);
-			setPos(637800.137 * (new_pos->latitude() - zeroPoint.latitude)*sin(new_pos->longtitude())*cos(new_pos->latitude())*(150/(150+6378.137*sin(new_pos->latitude()))), -637800.137 * (new_pos->longtitude() - zeroPoint.longtitude)*cos(new_pos->longtitude())*cos(new_pos->latitude())*(150/(150+6378.137*sin(new_pos->latitude()))));
-			length = 0;
+			set_pos(path->m_nodes.at(i));
+			this->setPos(cur_x_scene - 30, cur_y_scene - 22);
+			length = 0.0;
+		}
+
+		if (length > cur_velocity)
+		{
+			MapNode *new_pos = new MapNode(NULL, (cur_y + cur_velocity * (path->m_nodes.at(i)->latitude() - cur_y)/length), (cur_x + cur_velocity * (path->m_nodes.at(i)->longtitude() - cur_x)/length));
+			set_pos(new_pos);
+			cur_x = new_pos->longtitude();
+			cur_y = new_pos->latitude();
+			long_lat_to_scene(cur_x, cur_y, cur_x_scene, cur_y_scene);
+			this->setPos(cur_x_scene - 30, cur_y_scene - 22);
+			--i;
+			length = 0.0;
 		}
 	}
+
 	return true;
 }
 
@@ -290,11 +319,17 @@ ATWorld::ATWorld(const std::string & map_file_name)
 	loadMap();
 	
 	ATAmbulance *amb1 = new ATAmbulance(m_roads.at(10)->m_nodes.at(0));
-	//amb1->setPos(637800.137 * (m_roads.at(10)->m_nodes.at(0)->latitude() - m_zeroPoint.latitude)*sin(m_roads.at(10)->m_nodes.at(0)->longtitude())*cos(m_roads.at(10)->m_nodes.at(0)->latitude())*(150/(150+6378.137*sin(m_roads.at(10)->m_nodes.at(0)->latitude()))), -637800.137 * (m_roads.at(10)->m_nodes.at(0)->longtitude() - m_zeroPoint.longtitude)*cos(m_roads.at(10)->m_nodes.at(0)->longtitude())*cos(m_roads.at(10)->m_nodes.at(0)->latitude())*(150/(150+6378.137*sin(m_roads.at(10)->m_nodes.at(0)->latitude()))));
-	amb1->setPos(-5000, 10000);
+	amb1->set_pos(m_roads.at(10)->m_nodes.at(0));
+	all_amb.push_back(amb1);
+	double ln, lt;
+	long_lat_to_scene(m_roads.at(10)->m_nodes.at(0)->longtitude(), m_roads.at(10)->m_nodes.at(0)->latitude(), ln, lt);
+	amb1->setPos(ln - 30, lt - 22);
 	addItem(amb1);
-	//amb1->move(m_roads.at(2), m_zeroPoint);
-	
+	amb1->move(m_roads.at(10), m_zeroPoint);
+	//double length;
+	//calculate_length(m_roads.at(10)->m_nodes.at(1)->longtitude(), m_roads.at(10)->m_nodes.at(1)->latitude(), m_roads.at(10)->m_nodes.at(2)->longtitude(), m_roads.at(10)->m_nodes.at(2)->latitude(), length);
+	//double length =  sqrt((m_roads.at(10)->m_nodes.at(1)->latitude() - m_roads.at(10)->m_nodes.at(0)->latitude())*(m_roads.at(10)->m_nodes.at(1)->latitude() - m_roads.at(10)->m_nodes.at(0)->latitude()) + (m_roads.at(10)->m_nodes.at(1)->longtitude() - m_roads.at(10)->m_nodes.at(0)->longtitude())*(m_roads.at(10)->m_nodes.at(1)->longtitude() - m_roads.at(10)->m_nodes.at(0)->longtitude()));;
+	//amb1->setPos(-5000, 10000);
 	/*
 	QPoint *pnt1 = new QPoint(100,60);
 	auto acc = new ATAccident(pnt1, 1);
