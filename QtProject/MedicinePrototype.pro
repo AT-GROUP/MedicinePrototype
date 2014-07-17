@@ -2,4 +2,5 @@ TEMPLATE = subdirs
 
 SUBDIRS = \
     Database \
-    App
+    DatabaseWidget \
+    App \

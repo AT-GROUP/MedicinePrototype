@@ -6,9 +6,9 @@ CONFIG   += console qt
 CONFIG   -= app_bundle
 
 SOURCES += \
-   ../../src/Database/Database.C
+   ../../src/Database/Database.C \
 
 HEADERS += \
-    ../../src/Database/Database.H
+    ../../src/Database/Database.H \
 
 QMAKE_CXXFLAGS += -std=c++0x

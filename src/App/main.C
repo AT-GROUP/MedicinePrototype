@@ -1,11 +1,13 @@
-#include <QCoreApplication>
+#include <QApplication>
 #include <QDebug>
+//#include <QtWidgets>
+//#include <QMainWindow>
+#include "mainwindow.H"
 #include "../Database/Database.H"
 #include <vector>
 
 int main(int argc, char *argv[])
 {
-  //QCoreApplication a(argc, argv);
   Database db = Database();
   db.init();
 
@@ -43,5 +45,11 @@ int main(int argc, char *argv[])
   db.getAllInstitutions(institutions);
   for (int i = 0; i < (int)institutions.size(); i++)
     institutions[i].print();
-  return 0;// a.exec();
+
+  QApplication a(argc, argv);
+
+  MainWindow w;
+  w.show();
+
+  return a.exec();
 }

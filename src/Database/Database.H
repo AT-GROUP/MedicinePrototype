@@ -1,5 +1,6 @@
 #ifndef DATABASE_H
 #define DATABASE_H
+
 #include <QtSql>
 #include <vector>
 
@@ -93,7 +94,7 @@ class Database {
     bool erase(QString&);
     bool getMedicalInstituteByName(QString&, MedicalInstitute&) const;
     bool update(QString&, MedicalInstitute&);
-    void getAllInstitutions(std::vector <MedicalInstitute>&) const;
+    bool getAllInstitutions(std::vector <MedicalInstitute>&) const;
 };
 
 #endif

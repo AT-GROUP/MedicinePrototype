@@ -265,15 +265,17 @@ bool Database::insert(MedicalInstitute& MI) {
   return true;
 }
 
-void Database::getAllInstitutions(std::vector <MedicalInstitute>& institutions) const {
+bool Database::getAllInstitutions(std::vector <MedicalInstitute>& institutions) const {
   QSqlQuery query;
   MedicalInstitute MI = MedicalInstitute();
   
-  query.exec(selectAllId);
+  if (!query.exec(selectAllId))
+    return false;
   while (query.next()) {
     if (getMedicalInstituteById(query.value(0).toInt(), MI))
       institutions.push_back(MI);
   }
+  return true;
 }
 
 void MedicalInstitute::setName(QString& name) {
